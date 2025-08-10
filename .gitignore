@@ -1,34 +1,166 @@
-# Gradle files
-.gradle/
-build/
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Diiwaangelinta Qof & Raadinta ID</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, select, button { margin: 5px 0; padding: 8px; width: 100%; }
+    .house { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
 
-# Local configuration file (sdk path, etc)
-local.properties
+  <h1>Diiwaangelinta Guri & Qof leh ID</h1>
 
-# Log/OS Files
-*.log
+  <h2>➕ Ku dar Guri</h2>
+  <input type="text" id="houseName" placeholder="Cinwaanka Guriga">
+  <button onclick="addHouse()">Dar Guri</button>
+  <h3>🗑️ Tirtir Guri</h3>
+  <select id="houseToDelete"></select>
+  <button onclick="deleteHouse()">Tirtir Guri</button>
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
+  <h2>👤 Ku dar Qof</h2>
+  <input type="text" id="residentName" placeholder="Magaca Qofka">
+  <select id="houseSelect"></select>
+  <input type="number" id="age" placeholder="Da'da Qofka">
+  <select id="gender">
+    <option value="">Jinsiga</option>
+    <option value="Male">Rag</option>
+    <option value="Female">Dhedig</option>
+  </select>
+  <input type="text" id="phone" placeholder="Lambarka Telefoonka">
+  <button onclick="addResident()">Dar Qof</button>
 
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+  <h3>🗑️ Tirtir Qof</h3>
+  <select id="residentToDelete"></select>
+  <button onclick="deleteResident()">Tirtir Qof</button>
 
-# Keystore files
-*.jks
-*.keystore
+  <h2>🆔 Raadso Qof ID ahaan</h2>
+  <input type="text" id="searchID" placeholder="Geli ID-ga qofka">
+  <button onclick="searchByID()">Raadi</button>
+  <div id="searchResult"></div>
 
-# Google Services (e.g. APIs or Firebase)
-google-services.json
+  <h2>📋 Liiska Guryaha</h2>
+  <div id="housesList"></div>
 
-# Android Profiling
-*.hprof
+  <script>
+    let houses = JSON.parse(localStorage.getItem('houses')) || [];
+
+    function saveData() {
+      localStorage.setItem('houses', JSON.stringify(houses));
+    }
+
+    function generateID() {
+      return 'QOF-' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    function addHouse() {
+      const name = document.getElementById('houseName').value.trim();
+      if (!name) return alert("Geli magaca guriga");
+      houses.push({ name, residents: [] });
+      saveData();
+      render();
+      document.getElementById('houseName').value = '';
+    }
+
+    function deleteHouse() {
+      const houseIndex = document.getElementById('houseToDelete').value;
+      if (houseIndex === '') return alert("Xulo guri tirtirid");
+      houses.splice(houseIndex, 1);
+      saveData();
+      render();
+    }
+
+    function addResident() {
+      const name = document.getElementById('residentName').value.trim();
+      const houseIndex = document.getElementById('houseSelect').value;
+      const age = document.getElementById('age').value.trim();
+      const gender = document.getElementById('gender').value;
+      const phone = document.getElementById('phone').value.trim();
+
+      if (!name || houseIndex === '' || !age || !gender || !phone) {
+        return alert("Fadlan dhammeystir xogta");
+      }
+
+      const id = generateID();
+      houses[houseIndex].residents.push({ name, id, age, gender, phone });
+      alert(`Qofka waa la diiwaangeliyay. ID-giisa waa: ${id}`);
+      saveData();
+      render();
+      document.getElementById('residentName').value = '';
+      document.getElementById('age').value = '';
+      document.getElementById('gender').value = '';
+      document.getElementById('phone').value = '';
+    }
+
+    function deleteResident() {
+      const residentIndex = document.getElementById('residentToDelete').value;
+      if (residentIndex === '') return alert("Xulo qof tirtirid");
+      
+      const houseIndex = document.getElementById('houseSelect').value;
+      houses[houseIndex].residents.splice(residentIndex, 1);
+      saveData();
+      render();
+    }
+
+    function searchByID() {
+      const id = document.getElementById('searchID').value.trim();
+      let found = false;
+
+      houses.forEach(house => {
+        house.residents.forEach(res => {
+          if (res.id === id) {
+            document.getElementById('searchResult').innerHTML = `
+              <strong>Qof:</strong> ${res.name}<br>
+              <strong>ID:</strong> ${res.id}<br>
+              <strong>Da'da:</strong> ${res.age}<br>
+              <strong>Jinsiga:</strong> ${res.gender}<br>
+              <strong>Tel:</strong> ${res.phone}<br>
+              <strong>Guri:</strong> ${house.name}
+            `;
+            found = true;
+          }
+        });
+      });
+
+      if (!found) {
+        document.getElementById('searchResult').innerHTML = `<span style="color:red">Qofka lama helin</span>`;
+      }
+    }
+
+    function render() {
+      const list = document.getElementById('housesList');
+      const selectHouse = document.getElementById('houseSelect');
+      const selectHouseDelete = document.getElementById('houseToDelete');
+      const selectResidentDelete = document.getElementById('residentToDelete');
+
+      list.innerHTML = '';
+      selectHouse.innerHTML = '';
+      selectHouseDelete.innerHTML = '';
+      selectResidentDelete.innerHTML = '';
+
+      houses.forEach((house, i) => {
+        const houseOption = `<option value="${i}">${house.name}</option>`;
+        selectHouse.innerHTML += houseOption;
+        selectHouseDelete.innerHTML += houseOption;
+
+        house.residents.forEach((resident, j) => {
+          const residentOption = `<option value="${j}">${resident.name} (ID: ${resident.id})</option>`;
+          selectResidentDelete.innerHTML += residentOption;
+        });
+
+        const div = document.createElement('div');
+        div.className = 'house';
+        div.innerHTML = `<strong>Guri:</strong> ${house.name}<br><strong>Dad Degan:</strong><ul>` +
+          house.residents.map(r => `<li>${r.name} (ID: ${r.id}, Da'da: ${r.age}, ${r.gender}, Tel: ${r.phone})</li>`).join('') +
+          `</ul>`;
+        list.appendChild(div);
+      });
+    }
+
+    render();
+  </script>
+
+</body>
+</html>
